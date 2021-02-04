@@ -1,0 +1,20 @@
+mysql:
+  host: 192.168.0.209
+  port: 3307
+  username: root
+  password: root
+  db_name: vngo
+  max_conn: 50
+  max_idle_conn: 50
+  conn_lifetime: 86400
+
+redis:
+  host: 192.168.0.209
+  port: 6379
+  password:
+  db: 0
+  dial_timeout: 10
+  read_timeout: 10
+  write_timeout: 10
+
+log_level: debug

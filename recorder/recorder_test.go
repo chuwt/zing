@@ -1,0 +1,20 @@
+package recorder
+
+import (
+	"testing"
+	"vngo/config"
+	"vngo/object"
+	"vngo/recorder/huobi"
+)
+
+func TestRecorderHuobi(t *testing.T) {
+
+	recorder := NewRecorder(config.Config.Redis)
+	recorder.AddPublisher(object.GatewayHuobi, huobi.NewPublisher)
+
+	if err := recorder.Init(); err != nil {
+		t.Error(err)
+		return
+	}
+	recorder.Run()
+}
