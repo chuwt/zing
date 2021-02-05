@@ -87,7 +87,7 @@ func (p *Public) GetContract() error {
 		}
 		gateway.Factor.AddContract(
 			object.VtSymbol{
-				GatewayName: string(p.Name()),
+				GatewayName: p.Name(),
 				Symbol:      symbol.Symbol,
 			},
 			contract)

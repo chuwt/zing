@@ -5,8 +5,7 @@ import (
 )
 
 type TickData struct {
-	Symbol    string      `json:"symbol"`
-	Gateway   GatewayName `json:"gateway"`
+	VtSymbol
 	Timestamp int64       `json:"timestamp"`
 
 	LastPrice  decimal.Decimal `json:"last_price"`

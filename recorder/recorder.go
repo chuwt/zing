@@ -2,7 +2,6 @@ package recorder
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	pubsub "github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
@@ -90,14 +89,13 @@ retry:
 		msg, err = pubSub.ReceiveMessage(r.ctx)
 		if err != nil {
 			Log.Error("接收订阅消息失败", zap.Error(err))
+			_ = pubSub.Close()
 			goto retry
 		}
 		Log.Debug("接收订阅消息", zap.String("data", msg.Payload))
 
-		vtSymbol = new(object.VtSymbol)
-		if err = json.Unmarshal([]byte(msg.Payload), vtSymbol); err != nil {
-			continue
-		}
+		vtSymbol = object.LoadVtSymbol(msg.Payload)
+
 		// 根据不同的vtSymbol进行订阅
 		publisher, ok := r.publisherMap[vtSymbol.GatewayName]
 		if !ok {

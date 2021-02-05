@@ -22,6 +22,7 @@ func createTable() {
 	_ = engine.Sync2(
 		&Contract{},
 		&Balance{},
+		&Strategy{},
 	)
 }
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+	_ "net/http/pprof"
 	"vngo/config"
 	_ "vngo/config"
 	_ "vngo/db"
@@ -9,6 +11,7 @@ import (
 	"vngo/object"
 	"vngo/recorder"
 	huobird "vngo/recorder/huobi"
+	"vngo/strategy"
 )
 
 func tickRecorder() error {
@@ -24,7 +27,10 @@ func tickRecorder() error {
 
 func main() {
 	// 订阅
-	go tickRecorder()
+	//go tickRecorder()
+	go func() {
+		_ = http.ListenAndServe("0.0.0.0:9090", nil)
+	}()
 
 	// gateway
 	err := gateway.Factor.AddGateway(object.GatewayHuobi, huobi.NewPublic)
@@ -33,11 +39,24 @@ func main() {
 	}
 
 	// 策略
-
-	err = ConnectGateway("chuwt", object.GatewayHuobi)
+	st := strategy.NewStrategy(config.Config.Redis)
+	err = st.AddStrategy(strategy.AddStrategyReq{
+		UserId:     "chuwt",
+		StrategyId: 1,
+		VtSymbol: object.VtSymbol{
+			GatewayName: "huobi",
+			Symbol:      "btcusdt",
+		},
+		Setting: "",
+	})
 	if err != nil {
-		panic(err)
+		return
 	}
+
+	//err = ConnectGateway("chuwt", object.GatewayHuobi)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	select {}
 }

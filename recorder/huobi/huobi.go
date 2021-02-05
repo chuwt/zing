@@ -156,7 +156,8 @@ func (p *Publisher) onReceiveData(msg []byte) error {
 			// todo 这里做了一个限制，1s只推一次
 			if tick.LastPrice != decimal.Zero && tick.LastTime != tick.Timestamp {
 				tickBytes, _ := json.Marshal(tick)
-				if err = p.publisher("huobi", tickBytes); err != nil {
+				if err = p.publisher(tick.VtSymbol.String(), tickBytes); err != nil {
+					//if err = p.publisher("huobi", tickBytes); err != nil {
 					return err
 				}
 				tick.LastTime = tick.Timestamp
@@ -213,8 +214,10 @@ func (p *Publisher) subscribe(symbol string) error {
 		return err
 	}
 	p.tickMap[symbol] = &object.TickData{
-		Symbol:  symbol,
-		Gateway: object.GatewayHuobi,
+		VtSymbol: object.VtSymbol{
+			Symbol:      symbol,
+			GatewayName: object.GatewayHuobi,
+		},
 	}
 	return nil
 }
