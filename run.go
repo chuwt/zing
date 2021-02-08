@@ -53,6 +53,19 @@ func main() {
 		return
 	}
 
+	err = st.AddStrategy(strategy.AddStrategyReq{
+		UserId:     "chuwt",
+		StrategyId: 2,
+		VtSymbol: object.VtSymbol{
+			GatewayName: "huobi",
+			Symbol:      "ethusdt",
+		},
+		Setting: "",
+	})
+	if err != nil {
+		return
+	}
+
 	//err = ConnectGateway("chuwt", object.GatewayHuobi)
 	//if err != nil {
 	//	panic(err)
