@@ -32,39 +32,57 @@ func main() {
 		_ = http.ListenAndServe("0.0.0.0:9090", nil)
 	}()
 
+	var err error
+
 	// gateway
-	err := gateway.Factor.AddGateway(object.GatewayHuobi, huobi.NewPublic)
-	if err != nil {
+	//err := gateway.Factor.AddGateway(object.GatewayHuobi, huobi.NewPublic)
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	// 策略
+	st := strategy.NewStrategy(config.Config.Redis, config.Config.Strategy)
+	if err = st.Init(); err != nil {
 		panic(err)
 	}
 
-	// 策略
-	st := strategy.NewStrategy(config.Config.Redis)
-	err = st.AddStrategy(strategy.AddStrategyReq{
-		UserId:     "chuwt",
-		StrategyId: 1,
+	if err = st.AddStrategy(strategy.AddStrategyReq{
+		ApiReq: strategy.ApiReq{
+			UserId:     "chuwt",
+			StrategyId: 1,
+		},
+		StrategyClassName: "MaDingStrategy",
 		VtSymbol: object.VtSymbol{
 			GatewayName: "huobi",
 			Symbol:      "btcusdt",
 		},
 		Setting: "",
-	})
-	if err != nil {
+	}); err != nil {
 		return
+	}
+	if err = st.StartStrategy(strategy.StartStrategyReq{
+		ApiReq: strategy.ApiReq{
+			UserId:     "chuwt",
+			StrategyId: 1,
+		},
+	}); err != nil {
+		panic(err)
 	}
 
-	err = st.AddStrategy(strategy.AddStrategyReq{
-		UserId:     "chuwt",
-		StrategyId: 2,
-		VtSymbol: object.VtSymbol{
-			GatewayName: "huobi",
-			Symbol:      "ethusdt",
-		},
-		Setting: "",
-	})
-	if err != nil {
-		return
-	}
+	//if err = st.AddStrategy(strategy.AddStrategyReq{
+	//	ApiReq: strategy.ApiReq{
+	//		UserId:     "chuwt",
+	//		StrategyId: 2,
+	//	},
+	//	StrategyClassName: "MaDingStrategy",
+	//	VtSymbol: object.VtSymbol{
+	//		GatewayName: "huobi",
+	//		Symbol:      "ethusdt",
+	//	},
+	//	Setting: "",
+	//}); err != nil {
+	//	return
+	//}
 
 	//err = ConnectGateway("chuwt", object.GatewayHuobi)
 	//if err != nil {

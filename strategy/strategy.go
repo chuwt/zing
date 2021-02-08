@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	pubsub "github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 	"golang.org/x/sync/singleflight"
 	"sync"
 	"vngo/client/redis"
+	"vngo/config"
 	"vngo/db"
 	"vngo/object"
+	"vngo/python"
 )
 
 var Log = zap.L().With(zap.Namespace("strategy"))
@@ -23,7 +24,11 @@ type Strategy struct {
 	mu    sync.Mutex
 
 	userStrategy UserStrategy
-	subMap       map[object.VtSymbol]map[object.StrategyId]*st
+
+	pyEngine python.PyEngine
+
+	// todo 这里可以做个interface，支持更多的订阅发布形式，如本地ws和远程redis
+	subMap map[object.VtSymbol]map[object.StrategyKey]runtime
 }
 
 type tickSub struct {
@@ -35,95 +40,44 @@ type st struct {
 
 func (*st) OnTick(tick *object.TickData) {}
 
-func NewStrategy(cfg redis.Config) Strategy {
+func NewStrategy(redisCfg redis.Config, strategyCfg config.Strategy) Strategy {
 	return Strategy{
 		ctx:          context.Background(),
-		redis:        redis.NewRedis(cfg),
+		redis:        redis.NewRedis(redisCfg),
 		userStrategy: NewUserStrategy(),
 		once:         singleflight.Group{},
 		mu:           sync.Mutex{},
-		subMap:       make(map[object.VtSymbol]map[object.StrategyId]*st),
+		pyEngine:     python.NewPyEngine(strategyCfg.Path, strategyCfg.PythonPath),
+		subMap:       make(map[object.VtSymbol]map[object.StrategyKey]runtime),
 	}
 }
 
-func (s *Strategy) Init() {
+func (s *Strategy) Init() error {
 	// todo
 	// 读库
 	// 将所有策略的交易对进行订阅
-}
-
-type AddStrategyReq struct {
-	UserId     object.UserId
-	StrategyId object.StrategyId
-	VtSymbol   object.VtSymbol
-	Setting    string
-}
-
-func (as *AddStrategyReq) Key() object.StrategyKey {
-	return object.StrategyKey(fmt.Sprintf("%s.%d", as.UserId, as.StrategyId))
-}
-
-func (s *Strategy) AddStrategy(strategy AddStrategyReq) error {
-
-	var err error
-	key := strategy.Key()
-
-	Log.Info("添加策略", zap.String("key", string(key)))
-
-	// 同一用户的同一个策略做过滤
-	_, err, _ = s.once.Do(string(key), func() (interface{}, error) {
-		dbSt := &db.Strategy{
-			UserId:     string(strategy.UserId),
-			StrategyId: int64(strategy.StrategyId),
-			Symbol:     strategy.VtSymbol.Symbol,
-			Gateway:    string(strategy.VtSymbol.GatewayName),
-			Status:     0,
-		}
-
-		// 判断本地是否存在
-		if err = s.userStrategy.AddStrategy(dbSt); err != nil {
-			Log.Error("策略已存在", zap.String("key", string(key)))
-			return nil, err
-		}
-
-		// 入库
-		duplicate, err := db.CreateDupEntry(db.GetEngine(), dbSt)
-		if err != nil {
-			Log.Error("策略入库失败", zap.String("key", string(key)), zap.Error(err))
-			s.userStrategy.RemoveStrategy(key)
-			return nil, err
-		} else if duplicate {
-			Log.Warn("策略已存在", zap.String("key", string(key)))
-		}
-
-		// 订阅交易对信息
-		return nil, s.Sub(strategy.VtSymbol, strategy.StrategyId)
-	})
-
-	Log.Info("添加策略成功", zap.String("key", string(key)))
-
-	return err
-}
-
-func (s *Strategy) RemoveStrategy(userId object.UserId, strategyId object.StrategyId) {
-
+	if err := s.pyEngine.Init(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *Strategy) pub(symbol object.VtSymbol) error {
 	return s.redis.Publish(s.ctx, "subscribe_symbol", symbol.String()).Err()
 }
 
-func (s *Strategy) Sub(symbol object.VtSymbol, strategyId object.StrategyId) error {
+// todo 订阅的取消
+func (s *Strategy) Sub(symbol object.VtSymbol, entity *strategyEntity) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.subMap[symbol]; !ok {
 		if err := s.pub(symbol); err != nil {
 			return err
 		}
-		s.subMap[symbol] = make(map[object.StrategyId]*st)
-		s.subMap[symbol][strategyId] = &st{}
-	} else if _, ok := s.subMap[symbol][strategyId]; !ok {
-		s.subMap[symbol][strategyId] = &st{}
+		s.subMap[symbol] = make(map[object.StrategyKey]runtime)
+		s.subMap[symbol][entity.Data.StrategyKey()] = entity.Runtime
+	} else if _, ok := s.subMap[symbol][entity.Data.StrategyKey()]; !ok {
+		s.subMap[symbol][entity.Data.StrategyKey()] = entity.Runtime
 	} else {
 		return nil
 	}
@@ -168,21 +122,38 @@ func (s *Strategy) OnTick() {
 }
 
 type UserStrategy struct {
-	strategies map[object.StrategyKey]*db.Strategy
+	strategies map[object.StrategyKey]*strategyEntity
+}
+
+type strategyEntity struct {
+	Data    *db.Strategy // 数据
+	Runtime runtime      `xorm:"-"` // 策略运行时 python 或 golang
+}
+
+type runtime interface {
+	OnTick(*object.TickData) error
 }
 
 func NewUserStrategy() UserStrategy {
 	return UserStrategy{
-		strategies: make(map[object.StrategyKey]*db.Strategy),
+		strategies: make(map[object.StrategyKey]*strategyEntity),
 	}
 }
 
-func (us *UserStrategy) AddStrategy(strategy *db.Strategy) error {
-	if _, ok := us.strategies[strategy.StrategyKey()]; !ok {
-		us.strategies[strategy.StrategyKey()] = strategy
+func (us *UserStrategy) AddStrategy(strategy *strategyEntity) error {
+	if _, ok := us.strategies[strategy.Data.StrategyKey()]; !ok {
+		us.strategies[strategy.Data.StrategyKey()] = strategy
 		return nil
 	} else {
 		return errors.New("strategy existed")
+	}
+}
+
+func (us *UserStrategy) GetStrategyByKey(key object.StrategyKey) *strategyEntity {
+	if s, ok := us.strategies[key]; ok {
+		return s
+	} else {
+		return nil
 	}
 }
 

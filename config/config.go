@@ -14,6 +14,10 @@ import (
 )
 
 var Config = &struct {
+	StrategyPath string `yaml:"strategy_path"`
+
+	Strategy Strategy `yaml:"strategy"`
+
 	Mysql MysqlCfg     `yaml:"mysql"`
 	Redis redis.Config `yaml:"redis"`
 
@@ -49,6 +53,11 @@ func initLog(logLevel string) *zap.Logger {
 	}
 	zap.ReplaceGlobals(log)
 	return log
+}
+
+type Strategy struct {
+	Path       string `yaml:"path"`
+	PythonPath string `yaml:"python_path"`
 }
 
 type MysqlCfg struct {

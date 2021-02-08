@@ -10,18 +10,17 @@ import (
 )
 
 func TestPython(t *testing.T) {
-	pe := NewPyEngine("/Volumes/hdd1000gb/workspace/src/vngo/python/vngo/strategies")
+	pe := NewPyEngine(
+		"/Volumes/hdd1000gb/workspace/src/vngo/python/vngo/strategies",
+		"/Volumes/hdd1000gb/workspace/src/vngo/python/vngo")
 	if err := pe.Init(); err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	defer pe.Close()
-
-	state := lib.PyEval_SaveThread()
 
 	wg := sync.WaitGroup{}
 	strategies := make([]*lib.PyObject, 0)
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 5; i++ {
 		i := i
 		wg.Add(1)
 		go func() {
@@ -59,7 +58,5 @@ func TestPython(t *testing.T) {
 	o := strategies[0].GetAttrString("count")
 	fmt.Println(lib.PyUnicode_AsUTF8(o.Repr()))
 	lib.PyGILState_Release(gil)
-
-	lib.PyEval_RestoreThread(state)
 	_ = pe.Close()
 }
