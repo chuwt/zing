@@ -9,6 +9,8 @@ import (
 	"vngo/python/lib"
 )
 
+// todo 暂时没搞懂垃圾回收
+
 type PyEngine struct {
 	path            string
 	init            bool
@@ -51,6 +53,9 @@ func (pe *PyEngine) Prepare() error {
 
 func (pe *PyEngine) NewStrategyInstance(strategyClassName string, strategyId object.StrategyId, symbol object.VtSymbol, setting string) *lib.PyObject {
 
+	runtime.LockOSThread()
+	gil := lib.PyGILState_Ensure()
+
 	pyArgs := lib.PyTuple_New(5)
 	s0 := lib.PyUnicode_FromString(pe.path)
 	s1 := lib.PyUnicode_FromString(strategyClassName)
@@ -64,24 +69,22 @@ func (pe *PyEngine) NewStrategyInstance(strategyClassName string, strategyId obj
 	lib.PyTuple_SetItem(pyArgs, 3, s3)
 	lib.PyTuple_SetItem(pyArgs, 4, s4)
 
-	defer func() {
-		s4.DecRef()
-		s3.DecRef()
-		s2.DecRef()
-		s1.DecRef()
-		s0.DecRef()
-	}()
-
-	runtime.LockOSThread()
-	gil := lib.PyGILState_Ensure()
 	res := pe.strategyFactory.Call(pyArgs, nil)
-	pyArgs.DecRef()
+	s4.DecRef()
+	s3.DecRef()
+	s2.DecRef()
+	s1.DecRef()
+	s0.DecRef()
+	//pyArgs.DecRef()
 	lib.PyGILState_Release(gil)
 
 	return res
 }
 
 func (pe *PyEngine) ObjectCallFunc(obj *lib.PyObject, funcName string, args []string) *lib.PyObject {
+
+	runtime.LockOSThread()
+	gil := lib.PyGILState_Ensure()
 
 	pyArgs := lib.PyTuple_New(len(args))
 
@@ -90,13 +93,11 @@ func (pe *PyEngine) ObjectCallFunc(obj *lib.PyObject, funcName string, args []st
 		lib.PyTuple_SetItem(pyArgs, index, s)
 		s.DecRef()
 	}
-	defer pyArgs.DecRef()
+	//defer pyArgs.DecRef()
 
-	runtime.LockOSThread()
-	gil := lib.PyGILState_Ensure()
 	pyFunc := obj.GetAttrString(funcName)
 	res := pyFunc.Call(pyArgs, nil)
-	pyFunc.DecRef()
+	//pyFunc.DecRef()
 	lib.PyGILState_Release(gil)
 
 	return res
