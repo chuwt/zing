@@ -1,4 +1,8 @@
 # vngo
 
-策略 -> 发送要订阅的交易对到(subscribe_symbol) -> recorder
-recorder -> 发送tick数据到(vt_symbol) -> 策略
+## 简介
+基于vnpy的策略平台的go实现，采用go实现底层逻辑，支持多机器和多用户，上层策略兼容vnpy的策略
+
+## todo
+兼容vnpy策略实现
+订单/成交处理
