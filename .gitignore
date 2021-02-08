@@ -1,3 +1,5 @@
 conf/app.yaml
 .idea
 python/vngo/strategies
+.DS_Store
+__pycache__
