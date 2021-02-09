@@ -248,11 +248,11 @@ class ContractData(BaseData):
     Contract data contains basic information about each contract traded.
     """
     symbol: str
-    exchange: Exchange
+    # exchange: Exchange
     name: str
     product: Product
-    size: Any
-    pricetick: float
+    # size: Any
+    # pricetick: float
     contract_size: str = "1"
 
     min_order_amt: float = 0  # 交易队最小限价单下单量
@@ -273,7 +273,7 @@ class ContractData(BaseData):
 
     def __post_init__(self):
         """"""
-        self.vt_symbol = f"{self.symbol}.{self.exchange.value}"
+        self.vt_symbol = f"{self.symbol}.{self.gateway_name}"
 
 
 @dataclass

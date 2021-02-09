@@ -25,7 +25,7 @@ func TestPython(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			strategy := pe.NewStrategyInstance(
-				"MaDingStrategy",
+				"TestStrategy",
 				object.StrategyId(i),
 				object.VtSymbol{
 					GatewayName: object.GatewayName(fmt.Sprintf("huobi%d", i)),
@@ -46,7 +46,7 @@ func TestPython(t *testing.T) {
 			swg.Add(1)
 			s := s
 			go func() {
-				pe.ObjectCallFunc(s, "test", []string{"2"})
+				pe.ObjectCallFunc(s, "test", "2")
 				swg.Done()
 			}()
 		}

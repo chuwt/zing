@@ -6,7 +6,7 @@
 
 import os
 import importlib
-from go_template import CtaTemplate
+from template import CtaTemplate
 
 classes = dict()
 
@@ -37,8 +37,8 @@ def load_strategy_class_from_module(module_name):
         return "not found"
 
 
-def get_strategy_instance(path, strategy_class_name, strategy_name, vt_symbol, setting):
-    load_strategy(path)
+def get_strategy_instance(strategy_path, strategy_class_name, strategy_name, vt_symbol, setting):
+    load_strategy(strategy_path)
     strategy_class = classes.get(strategy_class_name, None)
     if not strategy_class:
         print("none")
@@ -47,5 +47,14 @@ def get_strategy_instance(path, strategy_class_name, strategy_name, vt_symbol, s
 
 
 if __name__ == "__main__":
-    load_strategy("/Volumes/hdd1000gb/workspace/src/vngo/python/vngo/strategies")
-    print(classes)
+    strategy = get_strategy_instance(
+        "/Volumes/hdd1000gb/workspace/src/vngo/python/vngo/strategies",
+        "MaDingStrategy",
+        "chuwt",
+        "chuwt",
+        ""
+    )
+    strategy.on_contract(
+        '{"gateway":"huobi","symbol":"btcusdt","name":"","product":"现货","min_order_amt":"0.0001","min_order_value":"5","min_volume":"0.000001"}')
+    strategy.on_init()
+    print(strategy)

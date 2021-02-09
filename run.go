@@ -11,7 +11,6 @@ import (
 	"vngo/object"
 	"vngo/recorder"
 	huobird "vngo/recorder/huobi"
-	"vngo/strategy"
 )
 
 func tickRecorder() error {
@@ -35,39 +34,39 @@ func main() {
 	var err error
 
 	// gateway
-	//err := gateway.Factor.AddGateway(object.GatewayHuobi, huobi.NewPublic)
-	//if err != nil {
+	err = gateway.Factor.AddGateway(object.GatewayHuobi, huobi.NewPublic)
+	if err != nil {
+		panic(err)
+	}
+
+	//// 策略
+	//st := strategy.NewStrategy(config.Config.Redis, config.Config.Strategy)
+	//if err = st.Init(); err != nil {
 	//	panic(err)
 	//}
-
-	// 策略
-	st := strategy.NewStrategy(config.Config.Redis, config.Config.Strategy)
-	if err = st.Init(); err != nil {
-		panic(err)
-	}
-
-	if err = st.AddStrategy(strategy.AddStrategyReq{
-		ApiReq: strategy.ApiReq{
-			UserId:     "chuwt",
-			StrategyId: 1,
-		},
-		StrategyClassName: "MaDingStrategy",
-		VtSymbol: object.VtSymbol{
-			GatewayName: "huobi",
-			Symbol:      "btcusdt",
-		},
-		Setting: "",
-	}); err != nil {
-		return
-	}
-	if err = st.StartStrategy(strategy.StartStrategyReq{
-		ApiReq: strategy.ApiReq{
-			UserId:     "chuwt",
-			StrategyId: 1,
-		},
-	}); err != nil {
-		panic(err)
-	}
+	//
+	//if err = st.AddStrategy(strategy.AddStrategyReq{
+	//	ApiReq: strategy.ApiReq{
+	//		UserId:     "chuwt",
+	//		StrategyId: 1,
+	//	},
+	//	StrategyClassName: "MaDingStrategy",
+	//	VtSymbol: object.VtSymbol{
+	//		GatewayName: "huobi",
+	//		Symbol:      "btcusdt",
+	//	},
+	//	Setting: "",
+	//}); err != nil {
+	//	return
+	//}
+	//if err = st.StartStrategy(strategy.StartStrategyReq{
+	//	ApiReq: strategy.ApiReq{
+	//		UserId:     "chuwt",
+	//		StrategyId: 1,
+	//	},
+	//}); err != nil {
+	//	panic(err)
+	//}
 
 	//if err = st.AddStrategy(strategy.AddStrategyReq{
 	//	ApiReq: strategy.ApiReq{

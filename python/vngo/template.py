@@ -1,9 +1,10 @@
 """"""
+import json
 from abc import ABC
 from copy import copy
 from typing import Any, Callable
 
-from trader.object import BarData, TickData, OrderData, TradeData
+from trader.object import BarData, TickData, OrderData, TradeData, ContractData
 from trader.utility import virtual
 from dataclasses import dataclass, field
 from trader.constant import Direction, Offset, Interval
@@ -44,7 +45,7 @@ class CtaTemplate(ABC):
             cta_engine: Any,
             strategy_name: str,
             vt_symbol: str,
-            setting: dict,
+            setting_json: str,
     ):
         """"""
         self.strategy_name = strategy_name
@@ -61,16 +62,19 @@ class CtaTemplate(ABC):
         self.variables.insert(0, "inited")
         self.variables.insert(1, "trading")
         self.variables.insert(2, "pos")
-        self.update_setting(setting)
+        self.update_setting(setting_json)
         self.last_error = None
+        self.contract = None
 
-    def update_setting(self, setting: dict):
+    def update_setting(self, setting_json):
         """
         Update strategy parameter wtih value in setting dict.
         """
-        for name in self.parameters:
-            if name in setting:
-                setattr(self, name, setting[name])
+        if setting_json:
+            setting = json.loads(setting_json)
+            for name in self.parameters:
+                if name in setting:
+                    setattr(self, name, setting[name])
 
     @classmethod
     def get_class_parameters(cls):
@@ -113,6 +117,35 @@ class CtaTemplate(ABC):
             "variables": self.get_variables(),
         }
         return strategy_data
+
+    def on_contract(self, contract_json):
+        contract_dict = json.loads(contract_json)
+        self.contract = ContractData(
+            gateway_name=contract_dict.get("gateway", ""),
+            symbol=contract_dict.get("symbol", ""),
+            name=contract_dict.get("name", ""),
+            product=contract_dict.get("product", ""),
+            min_order_amt=contract_dict.get("min_order_amt", 0),
+            min_order_value=contract_dict.get("min_order_value", 0),
+            min_volume=contract_dict.get("min_volume", 0)
+        )
+
+    def error(self, err_msg):
+        return self.return_msg(0, err_msg)
+
+    def success(self, msg):
+        return self.return_msg(1, msg)
+
+    @staticmethod
+    def return_msg(status, msg):
+        res = json.dumps({
+            "status": status,
+            "msg": msg
+        },
+            ensure_ascii=False,
+        )
+        res.encode("utf-8")
+        return res
 
     @virtual
     def on_init(self):

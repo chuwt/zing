@@ -2,27 +2,11 @@ package strategy
 
 import (
 	"errors"
-	"fmt"
 	"go.uber.org/zap"
 	"vngo/db"
+	"vngo/gateway"
 	"vngo/object"
 )
-
-type ApiReq struct {
-	UserId     object.UserId
-	StrategyId object.StrategyId
-}
-
-type AddStrategyReq struct {
-	ApiReq
-	StrategyClassName string
-	VtSymbol          object.VtSymbol
-	Setting           string
-}
-
-func (ar *ApiReq) Key() object.StrategyKey {
-	return object.StrategyKey(fmt.Sprintf("%s.%d", ar.UserId, ar.StrategyId))
-}
 
 /*
 创建策略（初始化资源）——————>终止策略（释放资源）
@@ -46,13 +30,15 @@ func (s *Strategy) AddStrategy(req AddStrategyReq) error {
 	// 同一用户的同一个策略做过滤
 	_, err, _ = s.once.Do(string(key), func() (interface{}, error) {
 		dbSt := &db.Strategy{
-			UserId:     string(req.UserId),
-			StrategyId: int64(req.StrategyId),
-			Symbol:     req.VtSymbol.Symbol,
-			Gateway:    string(req.VtSymbol.GatewayName),
-			Setting:    req.Setting,
-			ClassName:  req.StrategyClassName,
-			Status:     0,
+			UserId:         string(req.UserId),
+			StrategyId:     int64(req.StrategyId),
+			Symbol:         req.VtSymbol.Symbol,
+			Gateway:        string(req.VtSymbol.GatewayName),
+			LoadBar:        req.Setting.LoadBar,
+			Contract:       req.Setting.Contract,
+			RuntimeSetting: req.Setting.RuntimeSetting,
+			ClassName:      req.StrategyClassName,
+			Status:         0,
 		}
 
 		// 入库
@@ -69,7 +55,7 @@ func (s *Strategy) AddStrategy(req AddStrategyReq) error {
 			req.StrategyClassName,
 			req.StrategyId,
 			req.VtSymbol,
-			req.Setting)
+			req.Setting.RuntimeSetting)
 		if err != nil {
 			Log.Error("添加策略失败: 创建策略运行时失败",
 				zap.String("key", string(key)),
@@ -87,12 +73,39 @@ func (s *Strategy) AddStrategy(req AddStrategyReq) error {
 			Log.Error("策略已存在", zap.String("key", string(key)))
 			return nil, err
 		}
-
-		Log.Info("添加策略成功", zap.String("key", string(key)))
+		defer func() {
+			if err != nil {
+				s.userStrategy.RemoveStrategy(key)
+			}
+		}()
 
 		// todo 策略类的初始化
 		// 	包括 1. 是否加载历史数据
 		// 		2. 一些需要提前准备的数据
+
+		if req.Setting.Contract {
+			contract := gateway.Factor.GetContract(req.VtSymbol)
+			if err = runtime.OnContract(contract.ContractData()); err != nil {
+				Log.Error("添加策略失败: 初始化策略的contract失败",
+					zap.String("key", string(key)),
+					zap.Error(err))
+				return nil, err
+			}
+		}
+
+		if err = runtime.OnInit(); err != nil {
+			Log.Error("添加策略失败: 初始化策略on_init失败",
+				zap.String("key", string(key)),
+				zap.Error(err))
+			return nil, err
+		}
+
+		//if req.Setting.LoadBar != 0 {
+		//	// todo 获取历史数据，然后调用on_bar
+		//	runtime.OnBar(nil)
+		//}
+
+		Log.Info("添加策略成功", zap.String("key", string(key)))
 
 		return nil, nil
 	})

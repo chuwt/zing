@@ -6,7 +6,7 @@ import (
 
 type TickData struct {
 	VtSymbol
-	Timestamp int64       `json:"timestamp"`
+	Timestamp int64 `json:"timestamp"`
 
 	LastPrice  decimal.Decimal `json:"last_price"`
 	LastVolume decimal.Decimal `json:"last_volume"`
@@ -34,4 +34,17 @@ type Tick struct {
 	Low   decimal.Decimal `json:"low"`
 	Close decimal.Decimal `json:"close"`
 	Vol   decimal.Decimal `json:"vol"`
+}
+
+type BarData struct {
+}
+
+type ContractData struct {
+	VtSymbol
+	Name    string `json:"name"`
+	Product string `json:"product"`
+
+	MinOrderAmt   decimal.Decimal `json:"min_order_amt"`
+	MinOrderValue decimal.Decimal `json:"min_order_value"`
+	MinVolume     decimal.Decimal `json:"min_volume"`
 }

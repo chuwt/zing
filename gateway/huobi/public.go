@@ -69,15 +69,17 @@ func (p *Public) GetContract() error {
 	for _, symbol := range symbols.Data {
 		// 入库
 		contract := &db.Contract{
-			Symbol:         symbol.Symbol,
-			Gateway:        string(p.Name()),
-			Product:        object.ProductNormal,
-			BaseCurrency:   symbol.BaseCurrency,
-			QuoteCurrency:  symbol.QuoteCurrency,
-			PricePrecision: symbol.PricePrecision,
-			MinOrderValue:  symbol.MinOrderValue.String(),
-			LimitMinAmt:    symbol.LimitOrderMinOrderAmt.String(),
-			LimitMaxAmt:    symbol.LimitOrderMaxOrderAmt.String(),
+			Symbol:          symbol.Symbol,
+			Gateway:         string(p.Name()),
+			Product:         object.ProductNormal,
+			BaseCurrency:    symbol.BaseCurrency,
+			QuoteCurrency:   symbol.QuoteCurrency,
+			PricePrecision:  symbol.PricePrecision,
+			AmountPrecision: symbol.AmountPrecision,
+			ValuePrecision:  symbol.ValuePrecision,
+			MinOrderValue:   symbol.MinOrderValue.String(),
+			LimitMinAmt:     symbol.LimitOrderMinOrderAmt.String(),
+			LimitMaxAmt:     symbol.LimitOrderMaxOrderAmt.String(),
 		}
 		_, err := db.CreateDupEntry(db.GetEngine(), contract)
 		if err != nil {

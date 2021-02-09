@@ -1,10 +1,12 @@
 package python
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"vngo/object"
 	"vngo/python/lib"
 )
@@ -75,12 +77,6 @@ func (pe *PyEngine) NewStrategyInstance2(strategyClassName string, strategyId ob
 	lib.PyTuple_SetItem(pyArgs, 4, s4)
 
 	res := pe.strategyFactory.Call(pyArgs, nil)
-	//s4.DecRef()
-	//s3.DecRef()
-	//s2.DecRef()
-	//s1.DecRef()
-	//s0.DecRef()
-	//pyArgs.DecRef()
 	lib.PyGILState_Release(gil)
 	// todo res 是空的情况
 
@@ -120,7 +116,7 @@ func (pe *PyEngine) NewStrategyInstance(strategyClassName string, strategyId obj
 	return res
 }
 
-func (pe *PyEngine) ObjectCallFunc(obj *lib.PyObject, funcName string, args []string) *lib.PyObject {
+func (pe *PyEngine) ObjectCallFunc(obj *lib.PyObject, funcName string, args ...string) (*resp, error) {
 
 	runtime.LockOSThread()
 	gil := lib.PyGILState_Ensure()
@@ -130,16 +126,24 @@ func (pe *PyEngine) ObjectCallFunc(obj *lib.PyObject, funcName string, args []st
 	for index, arg := range args {
 		s := lib.PyUnicode_FromString(arg)
 		lib.PyTuple_SetItem(pyArgs, index, s)
-		s.DecRef()
+		//s.DecRef()
 	}
 	//defer pyArgs.DecRef()
 
 	pyFunc := obj.GetAttrString(funcName)
-	res := pyFunc.Call(pyArgs, nil)
+	resObj := pyFunc.Call(pyArgs, nil)
 	//pyFunc.DecRef()
+	res := lib.PyUnicode_AsUTF8(resObj.Repr())
 	lib.PyGILState_Release(gil)
+	if res == "" || res == "None" {
+		return nil, nil
+	}
+	rp := new(resp)
+	if err := json.Unmarshal([]byte(strings.ReplaceAll(res, "'", "")), rp); err != nil {
+		return nil, err
+	}
 
-	return res
+	return rp, nil
 }
 
 type Strategy struct {
@@ -156,9 +160,34 @@ func (s *Strategy) Start() {
 }
 
 func (s *Strategy) OnTick(tick *object.TickData) error {
-	count := s.engine.ObjectCallFunc(s.pyObject, "on_start", nil)
-	gil := lib.PyGILState_Ensure()
-	fmt.Println(lib.PyUnicode_AsUTF8(count.Repr()))
-	lib.PyGILState_Release(gil)
+	_, err := s.engine.ObjectCallFunc(s.pyObject, "on_start")
+	return err
+}
+
+func (s *Strategy) OnBar(bar *object.BarData) error {
 	return nil
 }
+
+func (s *Strategy) OnContract(contract *object.ContractData) error {
+	contractBytes, _ := json.Marshal(contract)
+	_, err := s.engine.ObjectCallFunc(s.pyObject, "on_contract", string(contractBytes))
+	return err
+}
+
+func (s *Strategy) OnInit() error {
+	res, err := s.engine.ObjectCallFunc(s.pyObject, "on_init")
+	if err != nil {
+		return err
+	}
+	if res.Status == 0 {
+		return errors.New(res.Msg)
+	}
+	return nil
+}
+
+type resp struct {
+	Msg    string `json:"msg"`
+	Status int32  `json:"status"`
+}
+
+// todo python 返回的处理

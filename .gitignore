@@ -1,5 +1,5 @@
 conf/app.yaml
 .idea
-python/vngo/strategies
+python/vngo/strategies/huohu_strategy.py
 .DS_Store
 __pycache__

@@ -18,37 +18,27 @@ import (
 var Log = zap.L().With(zap.Namespace("strategy"))
 
 type Strategy struct {
-	ctx   context.Context
-	redis *redis.Redis
 	once  singleflight.Group
 	mu    sync.Mutex
+	ctx   context.Context
+	redis *redis.Redis
 
 	userStrategy UserStrategy
 
 	pyEngine python.PyEngine
-
 	// todo 这里可以做个interface，支持更多的订阅发布形式，如本地ws和远程redis
-	subMap map[object.VtSymbol]map[object.StrategyKey]runtime
+	subMap map[object.VtSymbol]map[object.StrategyKey]*strategyEntity
 }
-
-type tickSub struct {
-	vtSymbol object.VtSymbol
-}
-
-type st struct {
-}
-
-func (*st) OnTick(tick *object.TickData) {}
 
 func NewStrategy(redisCfg redis.Config, strategyCfg config.Strategy) Strategy {
 	return Strategy{
+		once:         singleflight.Group{},
+		mu:           sync.Mutex{},
 		ctx:          context.Background(),
 		redis:        redis.NewRedis(redisCfg),
 		userStrategy: NewUserStrategy(),
-		once:         singleflight.Group{},
-		mu:           sync.Mutex{},
 		pyEngine:     python.NewPyEngine(strategyCfg.Path, strategyCfg.PythonPath),
-		subMap:       make(map[object.VtSymbol]map[object.StrategyKey]runtime),
+		subMap:       make(map[object.VtSymbol]map[object.StrategyKey]*strategyEntity),
 	}
 }
 
@@ -74,10 +64,11 @@ func (s *Strategy) Sub(symbol object.VtSymbol, entity *strategyEntity) error {
 		if err := s.pub(symbol); err != nil {
 			return err
 		}
-		s.subMap[symbol] = make(map[object.StrategyKey]runtime)
-		s.subMap[symbol][entity.Data.StrategyKey()] = entity.Runtime
+		s.subMap[symbol] = make(map[object.StrategyKey]*strategyEntity)
+		s.subMap[symbol][entity.Data.StrategyKey()] = entity
 	} else if _, ok := s.subMap[symbol][entity.Data.StrategyKey()]; !ok {
-		s.subMap[symbol][entity.Data.StrategyKey()] = entity.Runtime
+		s.subMap[symbol][entity.Data.StrategyKey()] = entity
+		return nil
 	} else {
 		return nil
 	}
@@ -112,7 +103,9 @@ retry:
 		}
 
 		for _, userStrategy := range s.subMap[symbol] {
-			userStrategy.OnTick(tick)
+			if userStrategy.Data.Status == db.StrategyStatusRunning {
+				userStrategy.Runtime.OnTick(tick)
+			}
 		}
 	}
 }
@@ -132,6 +125,8 @@ type strategyEntity struct {
 
 type runtime interface {
 	OnTick(*object.TickData) error
+	OnBar(*object.BarData) error
+	OnContract(*object.ContractData) error
 }
 
 func NewUserStrategy() UserStrategy {
