@@ -7,6 +7,8 @@
 - python编写的策略只做指标判断（下单判断）（由于numpy和ta-lib的强大），加载历史数据和订单等放在golang部分
 - 后续支持golang原生策略
 
+## 图
+![img](https://github.com/chuwt/vngo/blob/master/doc/img.png?raw=true)
 
 ## todo
 - 兼容vnpy策略实现
