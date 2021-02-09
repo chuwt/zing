@@ -104,6 +104,7 @@ retry:
 
 		for _, userStrategy := range s.subMap[symbol] {
 			if userStrategy.Data.Status == db.StrategyStatusRunning {
+				// todo 考虑waitGroup+timeout的并发执行
 				userStrategy.Runtime.OnTick(tick)
 			}
 		}
