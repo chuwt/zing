@@ -10,7 +10,7 @@ import (
 	"os"
 	"path"
 	"strings"
-	"vngo/client/redis"
+	"github.com/chuwt/zing/client/redis"
 )
 
 var Config = &struct {

@@ -48,7 +48,7 @@ def get_strategy_instance(strategy_path, strategy_class_name, strategy_name, vt_
 
 if __name__ == "__main__":
     strategy = get_strategy_instance(
-        "/Volumes/hdd1000gb/workspace/src/vngo/python/vngo/strategies",
+        "/Volumes/hdd1000gb/workspace/src/github.com/chuwt/zing/python/github.com/chuwt/zing/strategies",
         "MaDingStrategy",
         "chuwt",
         "chuwt",

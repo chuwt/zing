@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 	"io/ioutil"
 	"strings"
-	"vngo/client/ws"
-	"vngo/object"
+	"github.com/chuwt/zing/client/ws"
+	"github.com/chuwt/zing/object"
 )
 
 var Log = zap.L().With(zap.Namespace("publisher-huobi"))
@@ -20,7 +20,7 @@ var Log = zap.L().With(zap.Namespace("publisher-huobi"))
 type Publisher struct {
 	*ws.WS
 	host       string
-	gateway    object.GatewayName
+	gateway    object.Gateway
 	subscribed map[string]struct{}         // 已订阅的交易对
 	seq        atomic.Int64                // 订阅id
 	publisher  object.PubFunc              // 消息发布方法

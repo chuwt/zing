@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"github.com/chuwt/fasthttp-client"
 	"go.uber.org/zap"
+	"github.com/chuwt/zing/object"
 )
 
 var log = zap.L().With(zap.Namespace("rest-request"))
 
 // 同步请求
-func SyncGetRequest(path string, resp interface{}, mapper fasthttp.Mapper) error {
+func SyncGetRequest(path string, resp interface{}, mapper object.Params) error {
 	client := fasthttp.NewClient()
 	if mapper != nil {
-		client.AddParams(mapper)
+		client.AddParams(fasthttp.Mapper(mapper))
 	}
 	res, err := client.Get(path)
 	if err != nil {

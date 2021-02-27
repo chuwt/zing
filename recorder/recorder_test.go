@@ -2,9 +2,9 @@ package recorder
 
 import (
 	"testing"
-	"vngo/config"
-	"vngo/object"
-	"vngo/recorder/huobi"
+	"github.com/chuwt/zing/config"
+	"github.com/chuwt/zing/object"
+	"github.com/chuwt/zing/recorder/huobi"
 )
 
 func TestRecorderHuobi(t *testing.T) {

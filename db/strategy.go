@@ -2,7 +2,7 @@ package db
 
 import (
 	"fmt"
-	"vngo/object"
+	"github.com/chuwt/zing/object"
 	"xorm.io/xorm"
 )
 

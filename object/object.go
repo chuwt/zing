@@ -9,9 +9,10 @@ const (
 	ProductNormal = "现货"
 )
 
+// 交易对.交易所
 type VtSymbol struct {
-	GatewayName GatewayName `json:"gateway"`
-	Symbol      string      `json:"symbol"`
+	GatewayName Gateway `json:"gateway"`
+	Symbol      string  `json:"symbol"`
 }
 
 func (vt *VtSymbol) String() string {
@@ -22,7 +23,7 @@ func LoadVtSymbol(vt string) *VtSymbol {
 	vtList := strings.Split(vt, ".")
 	if len(vtList) == 2 {
 		return &VtSymbol{
-			GatewayName: GatewayName(vtList[1]),
+			GatewayName: Gateway(vtList[1]),
 			Symbol:      vtList[0],
 		}
 	}
@@ -43,11 +44,24 @@ type VtBalance struct {
 
 type (
 	UserId      string
-	GatewayName string
+	Gateway     string
 	StrategyId  int64
 	StrategyKey string
+	ApiAuthJson string
+
+	Params map[string]string
 )
 
+func (sk StrategyKey) String() string {
+	return string(sk)
+}
+
+type StrategySetting struct {
+	RuntimeSetting string // 策略初始化的参数
+	LoadBar        int    // 加载的历史数据天数
+	Contract       bool   // 是否需要初始化contract
+}
+
 const (
-	GatewayHuobi GatewayName = "huobi"
+	GatewayHuobi Gateway = "huobi"
 )

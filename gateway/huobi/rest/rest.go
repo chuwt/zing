@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"vngo/gateway"
+	"github.com/chuwt/zing/gateway"
 )
 
 type HuoBi struct {

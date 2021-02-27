@@ -4,13 +4,12 @@ import (
 	"errors"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
-	"vngo/db"
-	"vngo/gateway"
-	"vngo/object"
+	"github.com/chuwt/zing/db"
+	"github.com/chuwt/zing/object"
 )
 
 type HuoBi struct {
-	Public
+	*Global
 	userId    object.UserId
 	accountId int64
 }
@@ -40,18 +39,17 @@ retry:
 				zap.String("userId", string(g.userId)),
 				zap.Error(err),
 			)
-			// todo 重连
 			goto retry
 		}
 	}
 }
 
-func (g *HuoBi) Connect() error {
-	if err := g.ws.Connect(); err != nil {
-		return err
-	}
-	return nil
-}
+//func (g *HuoBi) Connect() error {
+//	if err := g.ws.Connect(); err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 func (g *HuoBi) AccountAccountsBalance() error {
 	accountsBalance, err := g.rest.AccountAccountsBalance(g.accountId, nil)
@@ -83,9 +81,9 @@ func (g *HuoBi) AccountAccountsBalance() error {
 			return err
 		}
 		// 同时放入内存
-		if err := gateway.Factor.AddBalance(g.userId, dbBalance); err != nil {
-			return err
-		}
+		//if err := gateway.Factor.AddBalance(g.userId, dbBalance); err != nil {
+		//	return err
+		//}
 	}
 	Log.Info("获取用户余额成功")
 	return nil

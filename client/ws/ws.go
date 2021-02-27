@@ -5,7 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 	"time"
-	"vngo/object"
+	"github.com/chuwt/zing/object"
 )
 
 var Log = zap.L().With(zap.Namespace("websocket"))
@@ -86,7 +86,7 @@ func (ws *WS) OnReceive(unCompress func([]byte) ([]byte, error)) {
 }
 
 type Msg struct {
-	GatewayName object.GatewayName
+	GatewayName object.Gateway
 	UserId      object.UserId
 	Data        []byte
 }

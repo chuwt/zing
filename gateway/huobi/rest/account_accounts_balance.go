@@ -3,7 +3,7 @@ package rest
 import (
 	"fmt"
 	"github.com/shopspring/decimal"
-	"vngo/client/http"
+	"github.com/chuwt/zing/client/http"
 )
 
 func (r *HuoBi) AccountAccountsBalance(accountId int64, callback http.Callback) (*AccountAccountsBalanceRes, error) {
@@ -14,7 +14,7 @@ func (r *HuoBi) AccountAccountsBalance(accountId int64, callback http.Callback) 
 	} else {
 		signParams := r.api.NewSignParams()
 		signature := r.api.Sign("GET", r.Host, short, signParams)
-		signParams.Set("Signature", signature)
+		signParams["Signature"] = signature
 
 		accountAccountsBalanceRes := new(AccountAccountsBalanceRes)
 		err := http.SyncGetRequest(path, accountAccountsBalanceRes, signParams)

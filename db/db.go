@@ -4,7 +4,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"go.uber.org/zap"
-	"vngo/config"
+	"github.com/chuwt/zing/config"
 	"xorm.io/xorm"
 )
 
@@ -23,6 +23,7 @@ func createTable() {
 		&Contract{},
 		&Balance{},
 		&Strategy{},
+		&ApiAuth{},
 	)
 }
 

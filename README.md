@@ -1,4 +1,4 @@
-# vngo
+# github.com/chuwt/zing
 
 ## 简介
 基于vnpy的策略平台的go实现，采用go实现底层逻辑，支持多机器和多用户，上层策略兼容vnpy的策略（需要一些小修改）
@@ -8,7 +8,7 @@
 - 后续支持golang原生策略
 
 ## 图
-![img](https://github.com/chuwt/vngo/blob/master/doc/img.png?raw=true)
+![img](https://github.com/chuwt/github.com/chuwt/zing/blob/master/doc/img.png?raw=true)
 
 ## todo
 - 兼容vnpy策略实现

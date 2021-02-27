@@ -3,7 +3,7 @@ package db
 import (
 	"strings"
 	"time"
-	"vngo/object"
+	"github.com/chuwt/zing/object"
 )
 
 type Balance struct {

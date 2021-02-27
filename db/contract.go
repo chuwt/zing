@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/shopspring/decimal"
-	"vngo/object"
+	"github.com/chuwt/zing/object"
 )
 
 type Contract struct {
@@ -22,7 +22,7 @@ type Contract struct {
 
 func (c *Contract) VtSymbol() object.VtSymbol {
 	return object.VtSymbol{
-		GatewayName: object.GatewayName(c.Gateway),
+		GatewayName: object.Gateway(c.Gateway),
 		Symbol:      c.Symbol,
 	}
 }

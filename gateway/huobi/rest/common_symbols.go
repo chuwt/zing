@@ -2,7 +2,7 @@ package rest
 
 import (
 	"github.com/shopspring/decimal"
-	"vngo/client/http"
+	"github.com/chuwt/zing/client/http"
 )
 
 // 获取所有交易对

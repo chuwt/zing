@@ -5,20 +5,20 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"github.com/chuwt/fasthttp-client"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+	"github.com/chuwt/zing/object"
 )
 
-type Api struct {
+type ApiAuth struct {
 	Key    string
 	Secret string
 }
 
-func (a *Api) NewSignParams() fasthttp.Mapper {
-	return fasthttp.Mapper{
+func (a *ApiAuth) NewSignParams() object.Params {
+	return object.Params{
 		"AccessKeyId":      a.Key,
 		"SignatureMethod":  "HmacSHA256",
 		"SignatureVersion": "2",
@@ -26,8 +26,8 @@ func (a *Api) NewSignParams() fasthttp.Mapper {
 	}
 }
 
-func (a *Api) NewWsSignParams() fasthttp.Mapper {
-	return fasthttp.Mapper{
+func (a *ApiAuth) NewWsSignParams() object.Params {
+	return object.Params{
 		"accessKey":        a.Key,
 		"signatureMethod":  "HmacSHA256",
 		"signatureVersion": "2.1",
@@ -35,7 +35,7 @@ func (a *Api) NewWsSignParams() fasthttp.Mapper {
 	}
 }
 
-func (a *Api) Sign(method, host, path string, params fasthttp.Mapper) string {
+func (a *ApiAuth) Sign(method, host, path string, params object.Params) string {
 	paramList := make([]string, 0)
 	if strings.Contains(host, "wss://") {
 		host = strings.ReplaceAll(host, "wss://", "")

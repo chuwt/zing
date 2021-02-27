@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"vngo/client/http"
+	"github.com/chuwt/zing/client/http"
 )
 
 func (r *HuoBi) AccountAccounts(callback http.Callback) (*AccountAccountsRes, error) {
@@ -12,7 +12,7 @@ func (r *HuoBi) AccountAccounts(callback http.Callback) (*AccountAccountsRes, er
 	} else {
 		signParams := r.api.NewSignParams()
 		signature := r.api.Sign("GET", r.Host, short, signParams)
-		signParams.Set("Signature", signature)
+		signParams["Signature"] = signature
 
 		accountAccounts := new(AccountAccountsRes)
 		err := http.SyncGetRequest(path, accountAccounts, signParams)

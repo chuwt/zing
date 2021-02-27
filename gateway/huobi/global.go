@@ -1,60 +1,59 @@
 package huobi
 
 import (
+	"encoding/json"
 	"errors"
 	"go.uber.org/zap"
-	"vngo/db"
-	"vngo/gateway"
-	"vngo/gateway/huobi/rest"
-	"vngo/gateway/huobi/ws"
-	"vngo/object"
+	"github.com/chuwt/zing/db"
+	"github.com/chuwt/zing/gateway"
+	"github.com/chuwt/zing/gateway/huobi/rest"
+	"github.com/chuwt/zing/gateway/huobi/ws"
+	"github.com/chuwt/zing/object"
 )
 
 var (
 	Log = zap.L().With(zap.Namespace("huobi-gateway"))
 )
 
-type Public struct {
+type Global struct {
 	rest rest.HuoBi
 	ws   ws.HuoBi
 }
 
-func NewPublic() gateway.Public {
-	return &Public{
+func NewGlobal() gateway.Global {
+	return &Global{
 		rest: rest.NewRest("https://api.huobipro.com"),
 		ws:   ws.NewWs("wss://api.huobi.pro/ws/v2"),
 	}
 }
 
-func (p *Public) Name() object.GatewayName {
+func (p *Global) Name() object.Gateway {
 	return object.GatewayHuobi
 }
 
-func (p *Public) NewUserGateway(userId object.UserId, api gateway.ApiAuth) (gateway.Gateway, error) {
+func (p *Global) NewUserGateway(userId object.UserId, auth object.ApiAuthJson) (gateway.UserGateway, error) {
 	hb := HuoBi{
-		Public: *p,
+		Global: p,
 		userId: userId,
 	}
-	if api == nil {
+	if auth == "" {
 		return nil, errors.New("nil apiKey")
 	}
-	hb.rest.AddAuth(api)
-	hb.ws.AddAuth(api)
+	apiAuth := new(ApiAuth)
+	if err := json.Unmarshal([]byte(auth), apiAuth); err != nil {
+		return nil, errors.New("apiKey format error")
+	}
+	hb.rest.AddAuth(apiAuth)
+	hb.ws.AddAuth(apiAuth)
 	return &hb, nil
 }
 
-func (p *Public) Init() error {
-	// 连接rest
-	// 获取交易对信息
-	var err error
-	if err = p.GetContract(); err != nil {
-		return err
-	}
-
+func (p *Global) Init() error {
+	// 一些初始化
 	return nil
 }
 
-func (p *Public) GetContract() error {
+func (p *Global) GetContract() ([]*db.Contract, error) {
 	Log.Info("开始获取交易对信息")
 	symbols, err := p.rest.CommonSymbols(nil)
 	if err != nil {
@@ -63,8 +62,9 @@ func (p *Public) GetContract() error {
 			zap.Error(err),
 		)
 		// todo 是否可以从数据库获取
-		return err
+		return nil, err
 	}
+	dbContract := make([]*db.Contract, 0, len(symbols.Data))
 	// 然后设置交易对
 	for _, symbol := range symbols.Data {
 		// 入库
@@ -85,15 +85,10 @@ func (p *Public) GetContract() error {
 		if err != nil {
 			Log.Error("数据库插入交易对错误",
 				zap.Error(err))
-			return err
+			return nil, err
 		}
-		gateway.Factor.AddContract(
-			object.VtSymbol{
-				GatewayName: p.Name(),
-				Symbol:      symbol.Symbol,
-			},
-			contract)
+		dbContract = append(dbContract, contract)
 	}
 	Log.Info("交易对信息获取成功")
-	return nil
+	return dbContract, nil
 }

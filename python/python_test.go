@@ -5,14 +5,14 @@ import (
 	"sync"
 	"testing"
 	"time"
-	"vngo/object"
-	"vngo/python/lib"
+	"github.com/chuwt/zing/object"
+	"github.com/chuwt/zing/python/lib"
 )
 
 func TestPython(t *testing.T) {
 	pe := NewPyEngine(
-		"/Volumes/hdd1000gb/workspace/src/vngo/python/vngo/strategies",
-		"/Volumes/hdd1000gb/workspace/src/vngo/python/vngo")
+		"/Volumes/hdd1000gb/workspace/src/github.com/chuwt/zing/python/github.com/chuwt/zing/strategies",
+		"/Volumes/hdd1000gb/workspace/src/github.com/chuwt/zing/python/github.com/chuwt/zing")
 	if err := pe.Init(); err != nil {
 		fmt.Println(err.Error())
 		return
@@ -28,7 +28,7 @@ func TestPython(t *testing.T) {
 				"TestStrategy",
 				object.StrategyId(i),
 				object.VtSymbol{
-					GatewayName: object.GatewayName(fmt.Sprintf("huobi%d", i)),
+					GatewayName: object.Gateway(fmt.Sprintf("huobi%d", i)),
 					Symbol:      "btcusdt",
 				},
 				"")

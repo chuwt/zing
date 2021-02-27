@@ -5,8 +5,8 @@ import (
 	"errors"
 	pubsub "github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
-	"vngo/client/redis"
-	"vngo/object"
+	"github.com/chuwt/zing/client/redis"
+	"github.com/chuwt/zing/object"
 )
 
 var Log = zap.L().With(zap.Namespace("recorder"))
@@ -15,21 +15,21 @@ type Recorder struct {
 	ctx   context.Context
 	redis *redis.Redis
 
-	publisherFactory map[object.GatewayName]object.NewPublisher  // 新对象工厂
-	publisherMap     map[object.GatewayName]object.DataPublisher // 创建后的保存
+	publisherFactory map[object.Gateway]object.NewPublisher  // 新对象工厂
+	publisherMap     map[object.Gateway]object.DataPublisher // 创建后的保存
 }
 
 func NewRecorder(cfg redis.Config) Recorder {
 	return Recorder{
 		ctx:              context.Background(),
 		redis:            redis.NewRedis(cfg),
-		publisherFactory: make(map[object.GatewayName]object.NewPublisher),
-		publisherMap:     make(map[object.GatewayName]object.DataPublisher),
+		publisherFactory: make(map[object.Gateway]object.NewPublisher),
+		publisherMap:     make(map[object.Gateway]object.DataPublisher),
 	}
 }
 
 // 添加工厂函数
-func (r *Recorder) AddPublisher(gateway object.GatewayName, factory object.NewPublisher) {
+func (r *Recorder) AddPublisher(gateway object.Gateway, factory object.NewPublisher) {
 	r.publisherFactory[gateway] = factory
 	Log.Info(
 		"添加gateway初始化方法成功",
@@ -52,7 +52,7 @@ func (r *Recorder) Init() error {
 }
 
 // 创建订阅实例
-func (r *Recorder) newPublisher(gateway object.GatewayName) error {
+func (r *Recorder) newPublisher(gateway object.Gateway) error {
 	newFunc, ok := r.publisherFactory[gateway]
 	if !ok {
 		Log.Error("gateway不存在", zap.String("gateway", string(gateway)))

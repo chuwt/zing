@@ -3,7 +3,7 @@ mysql:
   port: 3307
   username: root
   password: root
-  db_name: vngo
+  db_name: github.com/chuwt/zing
   max_conn: 50
   max_idle_conn: 50
   conn_lifetime: 86400

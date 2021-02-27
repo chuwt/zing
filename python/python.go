@@ -7,8 +7,8 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"vngo/object"
-	"vngo/python/lib"
+	"github.com/chuwt/zing/object"
+	"github.com/chuwt/zing/python/lib"
 )
 
 // todo 暂时没搞懂垃圾回收

@@ -1,4 +1,4 @@
-module vngo
+module github.com/chuwt/zing
 
 go 1.15
 

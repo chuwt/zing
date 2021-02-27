@@ -8,11 +8,11 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/singleflight"
 	"sync"
-	"vngo/client/redis"
-	"vngo/config"
-	"vngo/db"
-	"vngo/object"
-	"vngo/python"
+	"github.com/chuwt/zing/client/redis"
+	"github.com/chuwt/zing/config"
+	"github.com/chuwt/zing/db"
+	"github.com/chuwt/zing/object"
+	"github.com/chuwt/zing/python"
 )
 
 var Log = zap.L().With(zap.Namespace("strategy"))

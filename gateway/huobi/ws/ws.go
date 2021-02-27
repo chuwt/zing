@@ -2,13 +2,13 @@ package ws
 
 import (
 	"encoding/json"
-	"vngo/client/ws"
-	"vngo/gateway"
-	"vngo/object"
+	"github.com/chuwt/zing/client/ws"
+	"github.com/chuwt/zing/gateway"
+	"github.com/chuwt/zing/object"
 )
 
 type HuoBi struct {
-	Name   object.GatewayName
+	Name   object.Gateway
 	UserId object.UserId
 	Host   string
 	Conn   *ws.WS
