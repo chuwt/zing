@@ -8,15 +8,35 @@ import (
 )
 
 func TestUserCtx(t *testing.T) {
-	userCtx := NewUserCtx(dataCenter.NewRedisTower(config.Config.Redis))
+	var err error
+	dataTower := dataCenter.NewRedisTower(config.Config.Redis)
 
-	userCtx.AddUser("chuwt")
+	zing := NewZing(nil, dataTower)
+	err = zing.AddUser("chuwt")
+	if err != nil {
+		t.Log(err)
+		return
+	}
+	err = zing.AdduserStrategy(
+		"chuwt",
+		1,
+		object.VtSymbol{
+			GatewayName: "huobi",
+			Symbol:      "btcusdt",
+		},
+		object.StrategySetting{},
+	)
+	if err != nil {
+		t.Log(err)
+		return
+	}
 
-	userCtx.AddUserStrategy("chuwt", 1, object.VtSymbol{
-		GatewayName: "huobi",
-		Symbol:      "btcusdt",
-	}, object.StrategySetting{})
+	err = zing.RunUserStrategy("chuwt", 1)
+	if err != nil {
+		t.Log(err)
+		return
+	}
 
-	userCtx.StartUserStrategy("chuwt", 1)
+	select {}
 
 }

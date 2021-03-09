@@ -6,13 +6,13 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/chuwt/zing/client/ws"
+	"github.com/chuwt/zing/object"
 	"github.com/shopspring/decimal"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"strings"
-	"github.com/chuwt/zing/client/ws"
-	"github.com/chuwt/zing/object"
 )
 
 var Log = zap.L().With(zap.Namespace("publisher-huobi"))
