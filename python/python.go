@@ -1,14 +1,14 @@
 package python
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/chuwt/zing/json"
+	"github.com/chuwt/zing/object"
+	"github.com/chuwt/zing/python/lib"
 	"os"
 	"runtime"
 	"strings"
-	"github.com/chuwt/zing/object"
-	"github.com/chuwt/zing/python/lib"
 )
 
 // todo 暂时没搞懂垃圾回收
@@ -139,7 +139,7 @@ func (pe *PyEngine) ObjectCallFunc(obj *lib.PyObject, funcName string, args ...s
 		return nil, nil
 	}
 	rp := new(resp)
-	if err := json.Unmarshal([]byte(strings.ReplaceAll(res, "'", "")), rp); err != nil {
+	if err := json.Json.Unmarshal([]byte(strings.ReplaceAll(res, "'", "")), rp); err != nil {
 		return nil, err
 	}
 
@@ -169,7 +169,7 @@ func (s *Strategy) OnBar(bar *object.BarData) error {
 }
 
 func (s *Strategy) OnContract(contract *object.ContractData) error {
-	contractBytes, _ := json.Marshal(contract)
+	contractBytes, _ := json.Json.Marshal(contract)
 	_, err := s.engine.ObjectCallFunc(s.pyObject, "on_contract", string(contractBytes))
 	return err
 }

@@ -56,6 +56,7 @@ type Factory struct {
 
 func NewFactory() Factory {
 	return Factory{
+		gateways:       make(gateways),
 		newGatewayFunc: make(newGatewayFunc),
 		contract:       make(contract),
 	}

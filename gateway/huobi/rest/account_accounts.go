@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"errors"
 	"github.com/chuwt/zing/client/http"
 )
 
@@ -18,6 +19,8 @@ func (r *HuoBi) AccountAccounts(callback http.Callback) (*AccountAccountsRes, er
 		err := http.SyncGetRequest(path, accountAccounts, signParams)
 		if err != nil {
 			return nil, err
+		} else if accountAccounts.Status != "ok" {
+			return nil, errors.New(accountAccounts.ErrMsg)
 		}
 		return accountAccounts, nil
 	}

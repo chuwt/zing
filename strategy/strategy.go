@@ -2,17 +2,17 @@ package strategy
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
+	"github.com/chuwt/zing/client/redis"
+	"github.com/chuwt/zing/config"
+	"github.com/chuwt/zing/db"
+	"github.com/chuwt/zing/json"
+	"github.com/chuwt/zing/object"
+	"github.com/chuwt/zing/python"
 	pubsub "github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 	"golang.org/x/sync/singleflight"
 	"sync"
-	"github.com/chuwt/zing/client/redis"
-	"github.com/chuwt/zing/config"
-	"github.com/chuwt/zing/db"
-	"github.com/chuwt/zing/object"
-	"github.com/chuwt/zing/python"
 )
 
 var Log = zap.L().With(zap.Namespace("strategy"))
@@ -96,7 +96,7 @@ retry:
 
 		tick = new(object.TickData)
 
-		err = json.Unmarshal([]byte(msg.Payload), tick)
+		err = json.Json.Unmarshal([]byte(msg.Payload), tick)
 		if err != nil {
 			Log.Error("解析tick失败", zap.Error(err))
 			continue

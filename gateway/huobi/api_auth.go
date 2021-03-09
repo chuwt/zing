@@ -5,16 +5,16 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"github.com/chuwt/zing/object"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
-	"github.com/chuwt/zing/object"
 )
 
 type ApiAuth struct {
-	Key    string
-	Secret string
+	Key    string `json:"API Key"`
+	Secret string `json:"Secret Key"`
 }
 
 func (a *ApiAuth) NewSignParams() object.Params {

@@ -1,9 +1,9 @@
 package ws
 
 import (
-	"encoding/json"
 	"github.com/chuwt/zing/client/ws"
 	"github.com/chuwt/zing/gateway"
+	"github.com/chuwt/zing/json"
 	"github.com/chuwt/zing/object"
 )
 
@@ -67,7 +67,7 @@ func (h *HuoBi) Connect() error {
 
 func (h *HuoBi) OnReceive(data []byte) error {
 	res := new(ResData)
-	if err := json.Unmarshal(data, res); err != nil {
+	if err := json.Json.Unmarshal(data, res); err != nil {
 		return err
 	}
 	switch res.Action {
@@ -86,14 +86,14 @@ func (h *HuoBi) OnReceive(data []byte) error {
 		}
 	case "ping":
 		ping := new(Ping)
-		if err := json.Unmarshal(res.Data, ping); err != nil {
+		if err := json.Json.Unmarshal(res.Data, ping); err != nil {
 			return err
 		}
 		pong := Pong{
 			Action: "pong",
 			Data:   ping,
 		}
-		pongBytes, _ := json.Marshal(pong)
+		pongBytes, _ := json.Json.Marshal(pong)
 		if err := h.Conn.SendMsg(ws.Msg{
 			Data: pongBytes,
 		}); err != nil {
@@ -144,7 +144,7 @@ func (h *HuoBi) Login() error {
 }
 
 func (h *HuoBi) SendMsg(msg interface{}) error {
-	msgBytes, _ := json.Marshal(msg)
+	msgBytes, _ := json.Json.Marshal(msg)
 	return h.Conn.SendMsg(ws.Msg{
 		Data: msgBytes,
 	})

@@ -1,8 +1,9 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/chuwt/zing/client/redis"
+	"github.com/chuwt/zing/json"
 	"github.com/jinzhu/configor"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"github.com/chuwt/zing/client/redis"
 )
 
 var Config = &struct {
@@ -29,7 +29,7 @@ func init() {
 		panic(err)
 	}
 	log := initLog(Config.LogLevel)
-	configBytes, _ := json.Marshal(Config)
+	configBytes, _ := json.Json.Marshal(Config)
 	log.Info("读取配置文件", zap.String("config", string(configBytes)))
 }
 

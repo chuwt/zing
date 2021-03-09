@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"github.com/chuwt/zing/client/ws"
+	"github.com/chuwt/zing/json"
 	"github.com/chuwt/zing/object"
 	"github.com/shopspring/decimal"
 	"go.uber.org/atomic"
@@ -112,7 +112,7 @@ func (p *Publisher) onReceiveData(msg []byte) error {
 		res = new(Resp)
 	)
 
-	if err = json.Unmarshal(msg, res); err != nil {
+	if err = json.Json.Unmarshal(msg, res); err != nil {
 		return err
 	}
 
@@ -139,7 +139,7 @@ func (p *Publisher) onReceiveData(msg []byte) error {
 
 			case "detail":
 				t := new(object.Tick)
-				_ = json.Unmarshal(res.Tick, t)
+				_ = json.Json.Unmarshal(res.Tick, t)
 				// 市场高开低收
 				tick.Tick.High = t.High
 				tick.Tick.Open = t.Open
@@ -149,13 +149,13 @@ func (p *Publisher) onReceiveData(msg []byte) error {
 			case "trade":
 				// 最新成交信息
 				t := new(Trade)
-				_ = json.Unmarshal(res.Tick, t)
+				_ = json.Json.Unmarshal(res.Tick, t)
 				tick.LastPrice = t.Data[0].Price
 				tick.LastVolume = t.Data[0].Amount
 			}
 			// todo 这里做了一个限制，1s只推一次
 			if tick.LastPrice != decimal.Zero && tick.LastTime != tick.Timestamp {
-				tickBytes, _ := json.Marshal(tick)
+				tickBytes, _ := json.Json.Marshal(tick)
 				if err = p.publisher(tick.VtSymbol.String(), tickBytes); err != nil {
 					//if err = p.publisher("huobi", tickBytes); err != nil {
 					return err

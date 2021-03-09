@@ -2,8 +2,8 @@ package data_center
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/chuwt/zing/client/redis"
+	"github.com/chuwt/zing/json"
 	"github.com/chuwt/zing/object"
 	pubsub "github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
@@ -70,7 +70,7 @@ retry:
 
 		tick = new(object.TickData)
 
-		err = json.Unmarshal([]byte(msg.Payload), tick)
+		err = json.Json.Unmarshal([]byte(msg.Payload), tick)
 		if err != nil {
 			Log.Error("解析tick失败", zap.Error(err))
 			continue

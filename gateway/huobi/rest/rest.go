@@ -24,5 +24,7 @@ func (r *HuoBi) GetUrl(path string) string {
 }
 
 type BaseRes struct {
-	Status string `json:"status"`
+	Status  string `json:"status"`
+	ErrCode string `json:"err-code"`
+	ErrMsg  string `json:"err-msg"`
 }

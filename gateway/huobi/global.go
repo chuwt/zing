@@ -1,14 +1,14 @@
 package huobi
 
 import (
-	"encoding/json"
 	"errors"
-	"go.uber.org/zap"
 	"github.com/chuwt/zing/db"
 	"github.com/chuwt/zing/gateway"
 	"github.com/chuwt/zing/gateway/huobi/rest"
 	"github.com/chuwt/zing/gateway/huobi/ws"
+	"github.com/chuwt/zing/json"
 	"github.com/chuwt/zing/object"
+	"go.uber.org/zap"
 )
 
 var (
@@ -40,7 +40,7 @@ func (p *Global) NewUserGateway(userId object.UserId, auth object.ApiAuthJson) (
 		return nil, errors.New("nil apiKey")
 	}
 	apiAuth := new(ApiAuth)
-	if err := json.Unmarshal([]byte(auth), apiAuth); err != nil {
+	if err := json.Json.Unmarshal([]byte(auth), apiAuth); err != nil {
 		return nil, errors.New("apiKey format error")
 	}
 	hb.rest.AddAuth(apiAuth)

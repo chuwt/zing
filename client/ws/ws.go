@@ -1,11 +1,11 @@
 package ws
 
 import (
-	"encoding/json"
+	"github.com/chuwt/zing/json"
+	"github.com/chuwt/zing/object"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 	"time"
-	"github.com/chuwt/zing/object"
 )
 
 var Log = zap.L().With(zap.Namespace("websocket"))
@@ -36,7 +36,7 @@ func (ws *WS) Start(unCompress func([]byte) ([]byte, error)) {
 }
 
 func (ws *WS) SendStruct(msg interface{}) error {
-	msgBytes, _ := json.Marshal(msg)
+	msgBytes, _ := json.Json.Marshal(msg)
 	Log.Debug("发送消息", zap.String("data", string(msgBytes)))
 	err := ws.conn.WriteMessage(websocket.TextMessage, msgBytes)
 	if err != nil {
