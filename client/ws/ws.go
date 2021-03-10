@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"context"
 	"github.com/chuwt/zing/json"
 	"github.com/chuwt/zing/object"
 	"github.com/gorilla/websocket"
@@ -10,32 +11,36 @@ import (
 
 var Log = zap.L().With(zap.Namespace("websocket"))
 
-type WS struct {
+type Websocket struct {
+	Ctx      context.Context
+	CtxF     context.CancelFunc
 	conn     *websocket.Conn
 	RecvChan chan []byte
 	Err      chan error
 }
 
-func NewWsClient(addr string) (*WS, error) {
-
+func NewWsClient(addr string) (Websocket, error) {
 	dialer := websocket.DefaultDialer
 	dialer.HandshakeTimeout = 20 * time.Second
 	c, _, err := dialer.Dial(addr, nil)
 	if err != nil {
-		return nil, err
+		return Websocket{}, err
 	}
-	return &WS{
+
+	ws := Websocket{
 		conn:     c,
 		RecvChan: make(chan []byte, 1024),
-		Err:      make(chan error),
-	}, nil
+		Err:      make(chan error, 1),
+	}
+	ws.Ctx, ws.CtxF = context.WithCancel(context.Background())
+	return ws, nil
 }
 
-func (ws *WS) Start(unCompress func([]byte) ([]byte, error)) {
-	go ws.OnReceive(unCompress)
+func (ws *Websocket) DataReceiver(unCompress func([]byte) ([]byte, error)) {
+	go ws.onReceive(unCompress)
 }
 
-func (ws *WS) SendStruct(msg interface{}) error {
+func (ws *Websocket) SendStruct(msg interface{}) error {
 	msgBytes, _ := json.Json.Marshal(msg)
 	Log.Debug("发送消息", zap.String("data", string(msgBytes)))
 	err := ws.conn.WriteMessage(websocket.TextMessage, msgBytes)
@@ -48,7 +53,7 @@ func (ws *WS) SendStruct(msg interface{}) error {
 	return nil
 }
 
-func (ws *WS) SendMsg(msg Msg) error {
+func (ws *Websocket) SendTextMsg(msg Msg) error {
 	Log.Debug("发送消息", zap.String("data", string(msg.Data)))
 	err := ws.conn.WriteMessage(websocket.TextMessage, msg.Data)
 	if err != nil {
@@ -62,26 +67,32 @@ func (ws *WS) SendMsg(msg Msg) error {
 	return nil
 }
 
-func (ws *WS) OnReceive(unCompress func([]byte) ([]byte, error)) {
+func (ws *Websocket) onReceive(unCompress func([]byte) ([]byte, error)) {
 	var (
 		message []byte
 		err     error
 	)
 	for {
-		_, message, err = ws.conn.ReadMessage()
-		if err != nil {
-			ws.Err <- err
-			Log.Error("读取消息失败", zap.Error(err))
+		select {
+		case <-ws.Ctx.Done():
 			return
-		}
-		if unCompress != nil {
-			if message, err = unCompress(message); err != nil {
-				Log.Warn("读取消息解压缩失败", zap.Error(err))
-				continue
+		default:
+			_, message, err = ws.conn.ReadMessage()
+			if err != nil {
+				ws.CtxF()
+				ws.Err <- err
+				Log.Error("读取消息失败", zap.Error(err))
+				return
 			}
+			if unCompress != nil {
+				if message, err = unCompress(message); err != nil {
+					Log.Warn("读取消息解压缩失败", zap.Error(err))
+					continue
+				}
+			}
+			ws.RecvChan <- message
+			Log.Debug("读取消息", zap.String("data", string(message)))
 		}
-		ws.RecvChan <- message
-		Log.Debug("读取消息", zap.String("data", string(message)))
 	}
 }
 

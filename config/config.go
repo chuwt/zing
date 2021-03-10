@@ -22,6 +22,8 @@ var Config = &struct {
 	Redis redis.Config `yaml:"redis"`
 
 	LogLevel string `yaml:"log_level" default:"info"`
+
+	DebugApiKey string `yaml:"debug_api_key"`
 }{}
 
 func init() {

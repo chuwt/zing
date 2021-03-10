@@ -25,6 +25,7 @@ type UserGateway interface {
 type Gateway interface {
 	Name() object.Gateway
 	Init() error
+	Start(chan object.Event)
 }
 
 // 鉴权接口
@@ -70,7 +71,7 @@ func (f *Factory) NewUserGateway(userId object.UserId, gateway object.Gateway, a
 		if err != nil {
 			return nil, err
 		}
-		return newGateway, nil
+		return newGateway, newGateway.Init()
 	}
 }
 

@@ -2,10 +2,11 @@ package huobi
 
 import (
 	"errors"
-	"github.com/shopspring/decimal"
-	"go.uber.org/zap"
 	"github.com/chuwt/zing/db"
 	"github.com/chuwt/zing/object"
+	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
+	"time"
 )
 
 type HuoBi struct {
@@ -14,42 +15,58 @@ type HuoBi struct {
 	accountId int64
 }
 
-// 初始化用户gateway
-func (g *HuoBi) Init() error {
-	// 获取用户信息
-	if err := g.AccountAccounts(); err != nil {
-		return err
-	}
-	if err := g.AccountAccountsBalance(); err != nil {
-		return err
-	}
-	// 连接ws
-	// todo retry 的间隔
-retry:
-	if err := g.ws.Init(g.userId); err != nil {
-		return err
-	}
-
+func (g *HuoBi) timeoutConnection(f func()) {
+	var step = 2 * time.Second
 	for {
-		select {
-		case err := <-g.ws.Err:
-			Log.Error(
-				"websocket连接错误",
-				zap.String("gateway", string(g.Name())),
-				zap.String("userId", string(g.userId)),
-				zap.Error(err),
-			)
-			goto retry
-		}
+		f()
+		<-time.After(step)
+		step = step * 2
 	}
 }
 
-//func (g *HuoBi) Connect() error {
-//	if err := g.ws.Connect(); err != nil {
-//		return err
-//	}
-//	return nil
-//}
+func (g *HuoBi) Start(receiver chan object.Event) {
+	g.timeoutConnection(func() {
+		var err error
+	retry:
+		if err = g.ws.Init(); err != nil {
+			Log.Error("websocket init 失败", zap.Error(err))
+			return
+		}
+		if err = g.ws.Start(receiver); err != nil {
+			Log.Error("websocket start 失败", zap.Error(err))
+			return
+		}
+
+		for {
+			select {
+			case err := <-g.ws.Err:
+				Log.Error(
+					"websocket连接错误",
+					zap.String("gateway", string(g.Name())),
+					zap.String("userId", string(g.userId)),
+					zap.Error(err),
+				)
+				// todo close
+				goto retry
+			}
+		}
+	})
+}
+
+// 初始化用户gateway
+func (g *HuoBi) Init() error {
+	var err error
+	// 获取用户信息，这里也会检查apiKey
+	if err = g.AccountAccounts(); err != nil {
+		return err
+	}
+	//if err := g.AccountAccountsBalance(); err != nil {
+	//	return err
+	//}
+	// 连接ws
+	// todo retry 的间隔
+	return nil
+}
 
 func (g *HuoBi) AccountAccountsBalance() error {
 	accountsBalance, err := g.rest.AccountAccountsBalance(g.accountId, nil)

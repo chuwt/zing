@@ -18,3 +18,4 @@ redis:
   write_timeout: 10
 
 log_level: debug
+debug_api_key: 123

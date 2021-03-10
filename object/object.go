@@ -45,11 +45,17 @@ type VtBalance struct {
 type (
 	UserId      string
 	Gateway     string
+	Currency    string
 	StrategyId  int64
 	StrategyKey string
 	ApiAuthJson string
 
 	Params map[string]string
+
+	ClientOrderId string
+	TradeId       int64
+
+	VtCurrency string
 )
 
 func (sk StrategyKey) String() string {

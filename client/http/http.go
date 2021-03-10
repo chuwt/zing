@@ -21,7 +21,7 @@ func SyncGetRequest(path string, resp interface{}, mapper object.Params) error {
 		log.Error("同步请求失败", zap.Error(err))
 		return err
 	}
-	log.Debug("同步请求返回", zap.String("body", string(res.Body)))
+	//log.Debug("同步请求返回", zap.String("body", string(res.Body)))
 	if err := json.Json.Unmarshal(res.Body, &resp); err != nil {
 		return errors.New(string(res.Body))
 	}

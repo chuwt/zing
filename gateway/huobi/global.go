@@ -53,6 +53,8 @@ func (p *Global) Init() error {
 	return nil
 }
 
+func (p *Global) Start(chan object.Event) {}
+
 func (p *Global) GetContract() ([]*db.Contract, error) {
 	Log.Info("开始获取交易对信息")
 	symbols, err := p.rest.CommonSymbols(nil)

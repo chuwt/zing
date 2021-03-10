@@ -18,20 +18,37 @@ func TestGateway(t *testing.T) {
 		panic(err)
 	}
 	g, _ := factory.NewUserGateway("1", object.GatewayHuobi, "")
-	g.Init()
 	fmt.Println(g.Name())
 }
 
 func TestUserCtx(t *testing.T) {
 	var err error
 	dataTower := dataCenter.NewRedisTower(config.Config.Redis)
+	factory := gateway.NewFactory()
+	err = factory.AddGateway(object.GatewayHuobi, huobi.NewGlobal)
+	if err != nil {
+		panic(err)
+	}
+	g, err := factory.NewUserGateway("chuwt", object.GatewayHuobi, object.ApiAuthJson(config.Config.DebugApiKey))
+	if err != nil {
+		t.Log(err)
+		return
+	}
 
 	zing := NewZing(nil, dataTower)
+
 	err = zing.AddUser("chuwt")
 	if err != nil {
 		t.Log(err)
 		return
 	}
+
+	err = zing.AddUserGateway("chuwt", g)
+	if err != nil {
+		t.Log(err)
+		return
+	}
+
 	err = zing.AdduserStrategy(
 		"chuwt",
 		1,

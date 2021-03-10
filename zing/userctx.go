@@ -7,6 +7,7 @@ import (
 	"github.com/chuwt/zing/gateway"
 	"github.com/chuwt/zing/object"
 	"github.com/chuwt/zing/zing/receiver"
+	"go.uber.org/zap"
 )
 
 //
@@ -130,14 +131,70 @@ type userRuntime struct {
 	gateway  map[object.Gateway]gateway.UserGateway // 用户gateway列表，当前每个gateway的api只允许存在一个
 	strategy map[object.StrategyId]*userStrategy    // 用户策略管理
 
-	//event Event // 收到gateway推送的数据，然后推送到strategy的chan里
+	eventReceiver chan object.Event // 收到gateway推送的数据，然后推送到strategy的chan里
+
+	position      map[object.VtCurrency]object.PositionData
+	orderStrategy map[object.ClientOrderId]object.StrategyId
+	order         map[object.ClientOrderId]object.OrderData
+	trade         map[object.TradeId]object.TradeData
 }
 
 func NewUserRuntime(id object.UserId) *userRuntime {
-	return &userRuntime{
-		Id:       id,
-		gateway:  make(map[object.Gateway]gateway.UserGateway),
-		strategy: make(map[object.StrategyId]*userStrategy),
+	ur := &userRuntime{
+		Id:            id,
+		gateway:       make(map[object.Gateway]gateway.UserGateway),
+		strategy:      make(map[object.StrategyId]*userStrategy),
+		eventReceiver: make(chan object.Event, 1024),
+		position:      make(map[object.VtCurrency]object.PositionData),
+		orderStrategy: make(map[object.ClientOrderId]object.StrategyId),
+		order:         make(map[object.ClientOrderId]object.OrderData),
+		trade:         make(map[object.TradeId]object.TradeData),
+	}
+	go ur.Loop()
+	return ur
+}
+
+func (ur *userRuntime) Loop() {
+	for {
+		select {
+		case event := <-ur.eventReceiver:
+			/*
+				order订单通知后，存储order的记录
+				trade订单通知后，存储trade的记录
+			*/
+			switch event.Type {
+			case object.EventTypeConnection:
+				// todo 新链接建立的时候，需要重新检查订单状态
+			case object.EventTypePosition:
+				// todo 用户当前金额
+				position := event.Data.(object.PositionData)
+				ur.position[position.VtCurrency()] = position
+			case object.EventTypeOrder:
+				// 用户订单
+				order := event.Data.(object.OrderData)
+				if existedOrder, ok := ur.order[object.ClientOrderId(order.ClientOrderId)]; ok {
+					if existedOrder.Status == order.Status &&
+						existedOrder.ExecAmt == order.ExecAmt {
+						Log.Warn("existed order", zap.Any("order", order))
+						break
+					}
+					// todo 更新订单并发送通知到策略
+					// todo 此时的入库只是创建记录，策略消费后需要更新记录状态，标记消费了
+				}
+
+			case object.EventTypeTrade:
+				// todo 用户成交单
+				trade := event.Data.(object.TradeData)
+				if _, ok := ur.trade[object.TradeId(trade.TradeId)]; ok {
+					Log.Warn("existed tradeId", zap.Any("trade", trade))
+					break
+				}
+				// todo 更新成交并发送通知到策略
+				// todo 此时的入库只是创建记录，策略消费后需要更新记录状态，标记消费了
+			default:
+				continue
+			}
+		}
 	}
 }
 
@@ -145,9 +202,10 @@ func NewUserRuntime(id object.UserId) *userRuntime {
 func (ur *userRuntime) AddUserGateway(userGateway gateway.UserGateway) error {
 	if _, ok := ur.gateway[userGateway.Name()]; !ok {
 		ur.gateway[userGateway.Name()] = userGateway
+		// gateway启动
+		go userGateway.Start(ur.eventReceiver)
 		return nil
 	}
-	// todo gateway的初始化
 	return errors.New("gateway existed, remove before add")
 }
 
@@ -170,9 +228,9 @@ func (ur *userRuntime) GetUserStrategy(strategyId object.StrategyId) *userStrate
 
 // 用户策略
 type userStrategy struct {
-	Id      object.StrategyId
-	symbol  object.VtSymbol
-	order   orderManager   // 用来管理订单，订单恢复等
+	Id     object.StrategyId
+	symbol object.VtSymbol
+
 	tick    *receiver.Tick // 获取数据
 	runtime runtime        // 用来调用策略实例
 }
@@ -186,7 +244,6 @@ type Sender interface {
 func NewUserStrategy(strategyId object.StrategyId, symbol object.VtSymbol) *userStrategy {
 	return &userStrategy{
 		symbol:  symbol,
-		order:   orderManager{},
 		tick:    receiver.NewTickReceiver(strategyId, 1024),
 		runtime: runtime{},
 	}
@@ -207,16 +264,5 @@ func (us *userStrategy) Run() {
 		}
 	}
 }
-
-type orderManager struct {
-	sender   Sender
-	order    []OrderData
-	trade    []TradeData
-	position []Position
-}
-
-type OrderData struct{}
-type TradeData struct{}
-type Position struct{}
 
 type runtime struct{}

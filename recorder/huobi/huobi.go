@@ -18,7 +18,7 @@ import (
 var Log = zap.L().With(zap.Namespace("publisher-huobi"))
 
 type Publisher struct {
-	*ws.WS
+	*ws.Websocket
 	host       string
 	gateway    object.Gateway
 	subscribed map[string]struct{}         // 已订阅的交易对
@@ -58,11 +58,11 @@ retry:
 }
 
 func (p *Publisher) init() error {
-	var err error
-	p.WS, err = ws.NewWsClient(p.host)
+	w, err := ws.NewWsClient(p.host)
 	if err != nil {
 		return err
 	}
+	p.Websocket = &w
 	Log.Info("ws连接成功", zap.String("gateway", string(p.gateway)))
 	return nil
 }
@@ -73,7 +73,7 @@ func (p *Publisher) start() {
 		r   *gzip.Reader
 	)
 	// 启动
-	p.WS.Start(func(rawMsg []byte) ([]byte, error) {
+	p.DataReceiver(func(rawMsg []byte) ([]byte, error) {
 		b := new(bytes.Buffer)
 		_ = binary.Write(b, binary.LittleEndian, rawMsg)
 		r, err = gzip.NewReader(b)
