@@ -7,6 +7,8 @@ import (
 	"github.com/chuwt/zing/gateway"
 	"github.com/chuwt/zing/gateway/huobi"
 	"github.com/chuwt/zing/object"
+	"net/http"
+	_ "net/http/pprof"
 	"testing"
 )
 
@@ -22,6 +24,10 @@ func TestGateway(t *testing.T) {
 }
 
 func TestUserCtx(t *testing.T) {
+	go func() {
+		http.ListenAndServe(":6060", nil)
+	}()
+
 	var err error
 	dataTower := dataCenter.NewRedisTower(config.Config.Redis)
 	factory := gateway.NewFactory()

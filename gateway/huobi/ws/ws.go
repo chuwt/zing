@@ -97,8 +97,11 @@ func (h *HuoBi) dataProcess(receiver chan object.Event) {
 
 func (h *HuoBi) OnReceive(data []byte) (object.Event, error) {
 	res := new(ResData)
+	var event = object.Event{
+		Gateway: h.Name,
+	}
 	if err := json.Json.Unmarshal(data, res); err != nil {
-		return object.Event{}, err
+		return event, err
 	}
 	switch res.Action {
 	case "req":
@@ -109,10 +112,8 @@ func (h *HuoBi) OnReceive(data []byte) (object.Event, error) {
 			_ = h.UserTrade()
 			_ = h.UserAccount()
 			// 成功后需要发送成功信息，此时接收端会知道重连了
-			return object.Event{
-				Type: object.EventTypeConnection,
-				Data: h.Name,
-			}, nil
+			event.Type = object.EventTypeConnection
+			return event, nil
 		}
 	case "push":
 		chs := strings.Split(res.Ch, ".")
@@ -128,10 +129,9 @@ func (h *HuoBi) OnReceive(data []byte) (object.Event, error) {
 				Available: gatewayPosition.Available,
 			}
 
-			return object.Event{
-				Type: object.EventTypePosition,
-				Data: position,
-			}, nil
+			event.Type = object.EventTypePosition
+			event.Data = position
+			return event, nil
 		case "trade":
 			gatewayTrade := new(HuobiTrade)
 			_ = json.Json.Unmarshal(res.Data, gatewayTrade)
@@ -150,10 +150,9 @@ func (h *HuoBi) OnReceive(data []byte) (object.Event, error) {
 			// todo 关于手续费的处理, ht或者其他
 			trade.Fee = gatewayTrade.TransactFee
 
-			return object.Event{
-				Type: object.EventTypeTrade,
-				Data: trade,
-			}, nil
+			event.Type = object.EventTypeTrade
+			event.Data = trade
+			return event, nil
 		case "orders":
 			gatewayOrder := new(HuobiOrder)
 			_ = json.Json.Unmarshal(res.Data, gatewayOrder)
@@ -178,26 +177,25 @@ func (h *HuoBi) OnReceive(data []byte) (object.Event, error) {
 			//case "cancellation":
 			//}
 
-			return object.Event{
-				Type: object.EventTypeOrder,
-				Data: order,
-			}, nil
+			event.Type = object.EventTypeOrder
+			event.Data = order
+			return event, nil
 		default:
 			Log.Warn("未知类型", zap.String("data", string(data)))
 		}
 	case "ping":
 		ping := new(Ping)
 		if err := json.Json.Unmarshal(res.Data, ping); err != nil {
-			return object.Event{}, err
+			return event, err
 		}
 		if err := h.SendMsg(Pong{
 			Action: "pong",
 			Data:   ping,
 		}); err != nil {
-			return object.Event{}, err
+			return event, err
 		}
 	}
-	return object.Event{}, nil
+	return event, nil
 }
 
 func (h *HuoBi) UserAccount() error {

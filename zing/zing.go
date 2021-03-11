@@ -85,7 +85,13 @@ func (z *Zing) RunUserStrategy(userId object.UserId, strategyId object.StrategyI
 	if strategy == nil {
 		return errors.New("strategy not existed")
 	}
-	z.dataTower.AddReceiver(context.Background(), strategy.symbol, strategy.tick)
+	// todo 策略选择
+	// todo 策略初始化
+	strategy.Init()
+	err := z.dataTower.AddReceiver(context.Background(), strategy.symbol, strategy.tick)
+	if err != nil {
+		return err
+	}
 	go strategy.Run()
 	return nil
 }

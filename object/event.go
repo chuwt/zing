@@ -1,8 +1,9 @@
 package object
 
 type Event struct {
-	Type int32
-	Data interface{}
+	Type    int32
+	Gateway Gateway
+	Data    interface{}
 }
 
 const (

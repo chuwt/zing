@@ -53,6 +53,7 @@ type (
 	Params map[string]string
 
 	ClientOrderId string
+	OrderId       int64
 	TradeId       int64
 
 	VtCurrency string

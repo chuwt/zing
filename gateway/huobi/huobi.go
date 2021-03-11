@@ -16,11 +16,24 @@ type HuoBi struct {
 }
 
 func (g *HuoBi) timeoutConnection(f func()) {
-	var step = 2 * time.Second
+	var step = 2
+	var startTime, endTime int64
 	for {
+		startTime = time.Now().Unix()
 		f()
-		<-time.After(step)
-		step = step * 2
+		endTime = time.Now().Unix()
+		<-time.After(time.Duration(step) * time.Second)
+		/*
+		 重连时间过段，则等待时间指数上升，直到恒定在160
+		*/
+		if endTime-startTime < 1 && step < 120 {
+			step = step * 2
+		} else if endTime-startTime < 1 && step >= 120 {
+			step = 120
+		} else {
+			step = 2
+		}
+		Log.Warn("ws链接断开，准备重连", zap.Int("step", step))
 	}
 }
 
